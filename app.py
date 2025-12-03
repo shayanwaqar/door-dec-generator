@@ -38,18 +38,12 @@ def preview():
     font_color = request.form.get("font_color", "#FFFFFF")
     font_name = request.form.get("font_name", DEFAULT_FONT_NAME)
     positions_json = request.form.get("positions", "{}")
-    try:
-        positions = json.loads(positions_json)
-        # Position for the first image (index "0")
-        position = positions.get("0", {"x": 0.5, "y": 0.5})
-    except json.JSONDecodeError:
-        position = {"x": 0.5, "y": 0.5}
 
     preview_data_urls = []
     for idx, file_obj in enumerate(files):
         try:
             # Get position for the current template, default to center
-            pos = json.loads(positions_json).get(str(idx), {"x": 0.5, "y": 0.5}) # Use the full JSON for each lookup
+            pos = json.loads(positions_json).get(str(idx), {"x": 0.5, "y": 0.5})
         except (json.JSONDecodeError, KeyError):
             pos = {"x": 0.5, "y": 0.5}
 

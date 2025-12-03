@@ -162,7 +162,6 @@
         name="images"
         multiple
         accept=".png,.jpg,.jpeg"
-        required
       />
       <p class="small-text">
         You can upload multiple templates; they will be cycled through for each name.
@@ -228,10 +227,9 @@ Isabella</textarea>
     const previewBtn = document.getElementById("previewBtn");
     const generateBtn = document.getElementById("generateBtn");
     const statusEl = document.getElementById("status");
+    const fileInput = document.getElementById("images");
     const previewImageContainer = document.getElementById("preview-image-container");
     const previewGrid = document.getElementById("preview-grid");
-    const fileInput = document.getElementById("images");
-    const previewsContainer = document.getElementById("template-previews");
     const positionsInput = document.getElementById("positions");
     const form = document.getElementById("mainForm");
 
