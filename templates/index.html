@@ -148,6 +148,11 @@
       text-transform: uppercase;
       letter-spacing: 1px;
     }
+    #mode-instructions {
+      text-align: center;
+      margin-top: -0.75rem;
+      margin-bottom: 1rem;
+    }
     #preview-grid {
       display: flex;
       flex-wrap: wrap;
@@ -231,6 +236,7 @@ Isabella</textarea>
       <div id="status"></div>
       <div id="preview-image-container" style="display: none;">
         <h3 id="mode-indicator"></h3>
+        <p id="mode-instructions" class="small-text"></p>
         <div id="preview-grid"></div>
       </div>
     </div>
@@ -245,6 +251,7 @@ Isabella</textarea>
     const generateBtn = document.getElementById("generateBtn");
     const statusEl = document.getElementById("status");
     const modeIndicator = document.getElementById("mode-indicator");
+    const modeInstructions = document.getElementById("mode-instructions");
     const fileInput = document.getElementById("images");
     const previewImageContainer = document.getElementById("preview-image-container");
     const previewGrid = document.getElementById("preview-grid");
@@ -320,10 +327,12 @@ Isabella</textarea>
         // Update button states based on the new mode
         if (isArrangeMode) {
             modeIndicator.textContent = "Arrange Mode";
+            modeInstructions.textContent = "Drag each name to your desired position on the template.";
             arrangeBtn.disabled = true;
             previewBtn.disabled = false;
         } else {
             modeIndicator.textContent = "Preview Mode";
+            modeInstructions.textContent = "";
             arrangeBtn.disabled = false;
             previewBtn.disabled = true;
         }
