@@ -11,21 +11,26 @@
       margin: 0 auto;
       padding: 1.5rem;
       line-height: 1.5;
+      background-color: #1A202C; /* Navy background */
+      color: #E2E8F0;
     }
     h1 {
       font-size: 1.6rem;
       margin-bottom: 0.75rem;
+      color: #F7FAFC;
     }
     .section {
       margin-bottom: 1.5rem;
       padding: 1rem;
-      border: 1px solid #ddd;
+      border: 1px solid #4A5568;
       border-radius: 8px;
+      background-color: #2D3748;
     }
     label {
       font-weight: 600;
       display: block;
       margin-bottom: 0.25rem;
+      color: #F7FAFC;
     }
     input[type="file"],
     textarea,
@@ -34,10 +39,25 @@
       width: 100%;
       margin-bottom: 0.75rem;
     }
+    input[type="file"],
+    textarea,
+    select {
+      background-color: #2D3748;
+      color: #E2E8F0;
+      border: 1px solid #4A5568;
+      border-radius: 6px;
+      padding: 0.5rem;
+    }
     textarea {
       resize: vertical;
       min-height: 120px;
       font-family: monospace;
+    }
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: 1px solid #4A5568;
+      border-radius: 6px;
+      height: 40px;
     }
     .buttons {
       display: flex;
@@ -47,8 +67,8 @@
     button {
       padding: 0.5rem 1rem;
       border-radius: 6px;
-      border: 1px solid #333;
-      background: #111;
+      border: 1px solid #2B6CB0;
+      background: #2B6CB0;
       color: #fff;
       cursor: pointer;
       font-weight: 600;
@@ -57,19 +77,13 @@
       opacity: 0.6;
       cursor: not-allowed;
     }
-    #preview-image {
-      max-width: 100%;
-      margin-top: 0.75rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
     .small-text {
       font-size: 0.85rem;
-      color: #555;
+      color: #A0AEC0;
     }
     #name-count {
       font-size: 0.85rem;
-      color: #333;
+      color: #CBD5E0;
       margin-bottom: 0.5rem;
     }
     #status {
@@ -77,10 +91,10 @@
       font-size: 0.9rem;
     }
     .error {
-      color: #b00020;
+      color: #f44336;
     }
     .success {
-      color: #0a7b3b;
+      color: #4caf50;
     }
     .template-container {
       position: relative;
@@ -89,10 +103,10 @@
       width: 260px;
       height: 195px; /* 4:3 aspect ratio */
       vertical-align: top;
-      border: 1px solid #eee;
+      border: 1px solid #4A5568;
       border-radius: 4px;
       overflow: hidden;
-      background-color: #f8f9fa; /* Light background for padding effect */
+      background-color: #1A202C; /* Match main background */
     }
     .template-image {
       width: 100%;
