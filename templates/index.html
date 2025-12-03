@@ -158,6 +158,21 @@
       flex-wrap: wrap;
       gap: 0.5rem;
     }
+    .preset-positions {
+      padding: 0.25rem 0;
+      text-align: center;
+      background-color: #2D3748;
+    }
+    .preset-link {
+      margin: 0 0.5rem;
+      font-size: 0.8rem;
+      color: #A0AEC0;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .preset-link:hover {
+      color: #F7FAFC;
+    }
     .template-container.arrange-mode {
       border-color: #e67e22;
     }
@@ -348,15 +363,20 @@ Isabella</textarea>
     }
 
     function createPreviewElement(preview, inArrangeMode) {
-        const container = document.createElement("div");
-        container.className = "template-container";
-        container.classList.add(inArrangeMode ? "arrange-mode" : "preview-mode");
+        const wrapper = document.createElement("div");
+        wrapper.style.display = "inline-block";
+        wrapper.style.margin = "0.5rem";
+
+        const imageContainer = document.createElement("div");
+        imageContainer.className = "template-container";
+        imageContainer.classList.add(inArrangeMode ? "arrange-mode" : "preview-mode");
 
         const img = document.createElement("img");
         img.className = "template-image";
         img.src = preview.src;
 
-        container.appendChild(img);
+        imageContainer.appendChild(img);
+        wrapper.appendChild(imageContainer);
 
         // Only add draggable label if in arrange mode
         if (inArrangeMode) {
@@ -373,11 +393,32 @@ Isabella</textarea>
                 label.style.top = `${pos.y * 100}%`;
             }
 
-            container.appendChild(label);
-            makeDraggable(label, container, idx);
+            imageContainer.appendChild(label);
+            makeDraggable(label, imageContainer, idx);
+
+            // --- Add Preset Position Links ---
+            const presetsContainer = document.createElement("div");
+            presetsContainer.className = "preset-positions";
+            
+            const presets = { "Top": 0.15, "Center": 0.5, "Bottom": 0.85 };
+            for (const [name, yPos] of Object.entries(presets)) {
+                const link = document.createElement("span");
+                link.className = "preset-link";
+                link.textContent = name;
+                link.onclick = () => {
+                    const newPos = { x: 0.5, y: yPos };
+                    positions[idx] = newPos;
+                    positionsInput.value = JSON.stringify(positions);
+                    label.style.left = `${newPos.x * 100}%`;
+                    label.style.top = `${newPos.y * 100}%`;
+                };
+                presetsContainer.appendChild(link);
+            }
+            wrapper.appendChild(presetsContainer);
         }
 
-        return { container, img };
+        // Return the main wrapper to be appended to the grid
+        return { container: wrapper, img };
     }
 
     function makeDraggable(label, container, idx) {
