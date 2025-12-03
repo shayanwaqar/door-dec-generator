@@ -59,7 +59,10 @@ def preview():
         
         # Encode as base64 data URL to send via JSON
         base64_img = base64.b64encode(img_bytes).decode('utf-8')
-        preview_data_urls.append(f"data:image/png;base64,{base64_img}")
+        preview_data_urls.append({
+            "src": f"data:image/png;base64,{base64_img}",
+            "name": name_for_preview
+        })
 
     return jsonify({"previews": preview_data_urls})
 

@@ -155,7 +155,7 @@
 
   <form id="mainForm" action="/generate" method="post" enctype="multipart/form-data">
     <div class="section">
-      <label for="images">1. Upload background images (PNG/JPG)</label>
+      <label for="images">1. Upload images &amp; set name positions</label>
       <input
         type="file"
         id="images"
@@ -211,7 +211,7 @@ Isabella</textarea>
     <div class="section">
       <label>5. Preview &amp; Generate</label>
       <div class="buttons">
-        <button type="button" id="previewBtn">Preview Tags</button>
+        <button type="button" id="previewBtn">Arrange &amp; Preview Tags</button>
         <button type="submit" id="generateBtn">Generate ZIP</button>
       </div>
       <div id="status"></div>
@@ -277,16 +277,29 @@ Isabella</textarea>
         }
 
         const data = await response.json();
+        positions = {}; // Reset positions for the new preview set
         previewGrid.innerHTML = ""; // Clear previous previews
-        data.previews.forEach(src => {
-          // Create a container and image styled just like the draggable previews
+
+        data.previews.forEach((preview, idx) => {
+          // Create a draggable preview for each image
           const container = document.createElement("div");
           container.className = "template-container";
+
           const img = document.createElement("img");
           img.className = "template-image";
-          img.src = src;
+          img.src = preview.src;
+
+          const label = document.createElement("div");
+          label.className = "drag-label";
+          label.textContent = preview.name; // Use the actual name!
+
           container.appendChild(img);
+          container.appendChild(label);
           previewGrid.appendChild(container);
+
+          // Set initial position and make it draggable
+          positions[idx] = { x: 0.5, y: 0.5 };
+          makeDraggable(label, container, idx);
         });
 
         previewImageContainer.style.display = "block";
@@ -298,42 +311,6 @@ Isabella</textarea>
         previewBtn.disabled = false;
         generateBtn.disabled = false;
       }
-    });
-
-    let positions = {}; // { "0": { x: 0.5, y: 0.3 }, ... }
-
-    fileInput.addEventListener("change", () => {
-      previewsContainer.innerHTML = "";
-      positions = {};
-      positionsInput.value = "";
-
-      Array.from(fileInput.files).forEach((file, idx) => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const container = document.createElement("div");
-          container.className = "template-container";
-
-          const img = document.createElement("img");
-          img.src = e.target.result;
-          img.className = "template-image";
-
-          const label = document.createElement("div");
-          label.className = "drag-label";
-          label.textContent = "Sample Name";
-          label.dataset.index = String(idx);
-
-          container.appendChild(img);
-          container.appendChild(label);
-          previewsContainer.appendChild(container);
-
-          // Set initial position
-          positions[idx] = { x: 0.5, y: 0.5 };
-          positionsInput.value = JSON.stringify(positions);
-
-          makeDraggable(label, container, idx);
-        };
-        reader.readAsDataURL(file);
-      });
     });
 
     function makeDraggable(label, container, idx) {
@@ -361,6 +338,7 @@ Isabella</textarea>
         label.style.transform = "translate(-50%, -50%)";
 
         positions[idx] = { x: x / rect.width, y: y / rect.height };
+        // Update the hidden input on every drag move
         positionsInput.value = JSON.stringify(positions);
       });
 
@@ -368,6 +346,9 @@ Isabella</textarea>
         dragging = false;
       });
     }
+
+    // Global state for positions, to be populated by the preview step
+    let positions = {};
   </script>
 </body>
 </html>
