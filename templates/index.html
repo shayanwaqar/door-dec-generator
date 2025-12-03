@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Door Tag Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      line-height: 1.5;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.75rem;
+    }
+    .section {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+    input[type="file"],
+    textarea,
+    select,
+    input[type="color"] {
+      width: 100%;
+      margin-bottom: 0.75rem;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+      font-family: monospace;
+    }
+    .buttons {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    #preview-image {
+      max-width: 100%;
+      margin-top: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .small-text {
+      font-size: 0.85rem;
+      color: #555;
+    }
+    #name-count {
+      font-size: 0.85rem;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+    #status {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .error {
+      color: #b00020;
+    }
+    .success {
+      color: #0a7b3b;
+    }
+  </style>
+</head>
+<body>
+  <h1>Door Tag Generator</h1>
+  <p class="small-text">
+    Upload your door tag templates, paste resident names (one per line), preview, then download a ZIP of all tags.
+  </p>
+
+  <form id="mainForm" action="/generate" method="post" enctype="multipart/form-data">
+    <div class="section">
+      <label for="images">1. Upload background images (PNG/JPG)</label>
+      <input
+        type="file"
+        id="images"
+        name="images"
+        multiple
+        accept=".png,.jpg,.jpeg"
+        required
+      />
+      <p class="small-text">
+        You can upload multiple templates; they will be cycled through for each name.
+      </p>
+    </div>
+
+    <div class="section">
+      <label for="names">2. Paste names (one per line)</label>
+      <textarea
+        id="names"
+        name="names"
+        placeholder="Example:
+Alice
+Bob
+Charlie"
+        required
+      ></textarea>
+      <div id="name-count" class="small-text">0 names</div>
+      <p class="small-text">
+        Tip: copy the first-name column from Excel and paste it directly here.
+      </p>
+    </div>
+
+    <div class="section">
+      <label for="font_color">3. Text color</label>
+      <input type="color" id="font_color" name="font_color" value="#000000" />
+      <p class="small-text">
+        For V1, text is centered on the tag. Color is applied to all names.
+      </p>
+    </div>
+
+    <div class="section">
+      <label>4. Preview & generate</label>
+      <div class="buttons">
+        <button type="button" id="previewBtn">Preview</button>
+        <button type="submit" id="generateBtn">Generate ZIP</button>
+      </div>
+      <div id="status"></div>
+      <img id="preview-image" alt="Preview will appear here" style="display:none;" />
+    </div>
+  </form>
+
+  <script>
+    const namesTextarea = document.getElementById("names");
+    const nameCountEl = document.getElementById("name-count");
+    const previewBtn = document.getElementById("previewBtn");
+    const generateBtn = document.getElementById("generateBtn");
+    const statusEl = document.getElementById("status");
+    const previewImg = document.getElementById("preview-image");
+    const form = document.getElementById("mainForm");
+
+    function updateNameCount() {
+      const raw = namesTextarea.value || "";
+      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      nameCountEl.textContent = `${lines.length} name${lines.length === 1 ? "" : "s"}`;
+    }
+
+    namesTextarea.addEventListener("input", updateNameCount);
+    updateNameCount();
+
+    previewBtn.addEventListener("click", async () => {
+      statusEl.textContent = "";
+      statusEl.className = "";
+      previewImg.style.display = "none";
+
+      const files = document.getElementById("images").files;
+      if (!files || files.length === 0) {
+        statusEl.textContent = "Please upload at least one image before previewing.";
+        statusEl.className = "error";
+        return;
+      }
+
+      const raw = namesTextarea.value || "";
+      const hasName = raw.split(/\r?\n/).some(l => l.trim().length > 0);
+      if (!hasName) {
+        statusEl.textContent = "Please enter at least one name before previewing.";
+        statusEl.className = "error";
+        return;
+      }
+
+      previewBtn.disabled = true;
+      generateBtn.disabled = true;
+      statusEl.textContent = "Generating preview...";
+      statusEl.className = "";
+
+      try {
+        const formData = new FormData(form);
+        const response = await fetch("/preview", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          statusEl.textContent = text || "Failed to generate preview.";
+          statusEl.className = "error";
+          return;
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        previewImg.src = url;
+        previewImg.style.display = "block";
+
+        statusEl.textContent = "Preview generated successfully.";
+        statusEl.className = "success";
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Error generating preview.";
+        statusEl.className = "error";
+      } finally {
+        previewBtn.disabled = false;
+        generateBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
