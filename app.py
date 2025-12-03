@@ -27,7 +27,7 @@ def _parse_names(raw: str):
 def generate():
     files = request.files.getlist("images")
     raw_names = request.form.get("names", "")
-    font_color = request.form.get("font_color", "#000000")
+    font_color = request.form.get("font_color", "#FFFFFF")
     positions_json = request.form.get("positions", "")
     positions = {}
     if positions_json:
