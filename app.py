@@ -49,11 +49,13 @@ def preview():
     for idx, file_obj in enumerate(files):
         try:
             # Get position for the current template, default to center
-            pos = json.loads(positions_json).get(str(idx), {"x": 0.5, "y": 0.5})
+            pos = json.loads(positions_json).get(str(idx), {"x": 0.5, "y": 0.5}) # Use the full JSON for each lookup
         except (json.JSONDecodeError, KeyError):
             pos = {"x": 0.5, "y": 0.5}
 
-        img_bytes = generate_preview_image(file_obj, names[0], font_color, font_name, pos)
+        # Cycle through names for each preview, just like the final generation
+        name_for_preview = names[idx % len(names)]
+        img_bytes = generate_preview_image(file_obj, name_for_preview, font_color, font_name, pos)
         
         # Encode as base64 data URL to send via JSON
         base64_img = base64.b64encode(img_bytes).decode('utf-8')
