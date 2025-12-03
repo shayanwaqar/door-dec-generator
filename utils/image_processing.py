@@ -1,6 +1,6 @@
 import io
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -44,17 +44,17 @@ def _resize_image_if_needed(img: Image.Image, max_width=1000) -> Image.Image:
 # DRAW CENTERED TEXT WITH BORDER
 # ------------------------------
 
-def _draw_centered_text(
+def _draw_text_at_position(
     img: Image.Image,
     text: str,
+    position_xy: Tuple[int, int],
     font_color: str = "#FFFFFF",
-    text_position: str = "center",
     stroke_width: int = 3,
     stroke_fill: str = "#000000",
     width_margin_ratio: float = 0.9,
 ) -> Image.Image:
     """
-    Draw text in the center of the image with auto-fit and stroke border.
+    Draw text at a specific (x, y) coordinate with auto-fit font and stroke.
     """
 
     img = img.convert("RGB")
@@ -79,49 +79,17 @@ def _draw_centered_text(
             break
         size -= 2
 
-    # Calculate Y coordinate based on text_position
-    x = img.width // 2
-    if text_position == "top":
-        # Position text with a 5% margin from the top
-        y = int(img.height * 0.05)
-        anchor = "ma"  # Middle-aligned horizontally, Ascender-aligned vertically
-    elif text_position == "bottom":
-        # Position text with a 5% margin from the bottom
-        y = int(img.height * 0.95)
-        anchor = "md"  # Middle-aligned horizontally, Descender-aligned vertically
-    else:  # "center"
-        y = img.height // 2
-        anchor = "mm"  # Middle-aligned horizontally and vertically
-
     draw.text(
-        (x, y),
+        position_xy,
         text,
         font=font,
         fill=font_color,
-        anchor=anchor,
+        anchor="mm",  # Middle-aligned anchor
         stroke_width=stroke_width,
         stroke_fill=stroke_fill,
     )
 
     return img
-
-
-# ------------------------------
-# PREVIEW GENERATION
-# ------------------------------
-
-def generate_preview_image(file_obj, name: str, font_color: str, text_position: str) -> bytes:
-    """Generate one preview PNG based on first template + first name."""
-
-    img = Image.open(file_obj.stream)
-    img = _resize_image_if_needed(img)
-
-    # White text, black outline works best visually
-    img = _draw_centered_text(img, name, font_color, text_position, stroke_width=3)
-
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return buf.getvalue()
 
 
 # ------------------------------
@@ -132,7 +100,7 @@ def generate_batch_images(
     files,
     names: List[str],
     font_color: str,
-    text_position: str,
+    positions: Union[dict, None] = None,
 ) -> List[Tuple[str, bytes]]:
     """
     Generate all name tags and return list of (filename, image_bytes).
@@ -140,17 +108,36 @@ def generate_batch_images(
 
     # Load all uploaded templates into memory & resize for consistency
     templates = []
-    for f in files:
-        img = Image.open(f.stream)
+    for file_obj in files:
+        img = Image.open(file_obj.stream)
         img = _resize_image_if_needed(img)
         templates.append(img.copy())
 
     results = []
     tcount = len(templates)
+    if not tcount:
+        return []
 
     for idx, name in enumerate(names):
-        template = templates[idx % tcount].copy()
-        img = _draw_centered_text(template, name, font_color, text_position, stroke_width=3)
+        t_idx = idx % tcount
+        template = templates[t_idx].copy()
+
+        # Default: center
+        cx = template.width // 2
+        cy = template.height // 2
+
+        # If manual position provided for this template, use it
+        if positions and str(t_idx) in positions:
+            frac = positions[str(t_idx)]
+            try:
+                fx = float(frac.get("x", 0.5))
+                fy = float(frac.get("y", 0.5))
+                cx = int(fx * template.width)
+                cy = int(fy * template.height)
+            except (ValueError, TypeError):
+                pass  # Keep default on parsing error
+
+        img = _draw_text_at_position(template, name, (cx, cy), font_color=font_color, stroke_width=3)
 
         # Safe filename
         safe = "".join(c for c in name if c.isalnum() or c in (" ", "_", "-")).strip()

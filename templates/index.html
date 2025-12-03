@@ -82,6 +82,32 @@
     .success {
       color: #0a7b3b;
     }
+    .template-container {
+      position: relative;
+      display: inline-block;
+      margin: 0.5rem;
+      max-width: 260px;
+      vertical-align: top;
+    }
+    .template-image {
+      max-width: 100%;
+      display: block;
+      border-radius: 4px;
+    }
+    .drag-label {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      cursor: move;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -104,6 +130,7 @@
       <p class="small-text">
         You can upload multiple templates; they will be cycled through for each name.
       </p>
+      <div id="template-previews"></div>
     </div>
 
     <div class="section">
@@ -129,32 +156,23 @@ Charlie"
     </div>
 
     <div class="section">
-      <label for="text_position">4. Choose text position</label>
-      <select name="text_position" id="text_position">
-        <option value="top">Top</option>
-        <option value="center" selected>Center</option>
-        <option value="bottom">Bottom</option>
-      </select>
-    </div>
-
-    <div class="section">
-      <label>5. Preview & generate</label>
+      <label>4. Generate your tags</label>
       <div class="buttons">
-        <button type="button" id="previewBtn">Preview</button>
         <button type="submit" id="generateBtn">Generate ZIP</button>
       </div>
       <div id="status"></div>
-      <img id="preview-image" alt="Preview will appear here" style="display:none;" />
     </div>
   </form>
+  <input type="hidden" id="positions" name="positions" form="mainForm">
 
   <script>
     const namesTextarea = document.getElementById("names");
     const nameCountEl = document.getElementById("name-count");
-    const previewBtn = document.getElementById("previewBtn");
     const generateBtn = document.getElementById("generateBtn");
     const statusEl = document.getElementById("status");
-    const previewImg = document.getElementById("preview-image");
+    const fileInput = document.getElementById("images");
+    const previewsContainer = document.getElementById("template-previews");
+    const positionsInput = document.getElementById("positions");
     const form = document.getElementById("mainForm");
 
     function updateNameCount() {
@@ -166,61 +184,74 @@ Charlie"
     namesTextarea.addEventListener("input", updateNameCount);
     updateNameCount();
 
-    previewBtn.addEventListener("click", async () => {
-      statusEl.textContent = "";
-      statusEl.className = "";
-      previewImg.style.display = "none";
+    let positions = {}; // { "0": { x: 0.5, y: 0.3 }, ... }
 
-      const files = document.getElementById("images").files;
-      if (!files || files.length === 0) {
-        statusEl.textContent = "Please upload at least one image before previewing.";
-        statusEl.className = "error";
-        return;
-      }
+    fileInput.addEventListener("change", () => {
+      previewsContainer.innerHTML = "";
+      positions = {};
+      positionsInput.value = "";
 
-      const raw = namesTextarea.value || "";
-      const hasName = raw.split(/\r?\n/).some(l => l.trim().length > 0);
-      if (!hasName) {
-        statusEl.textContent = "Please enter at least one name before previewing.";
-        statusEl.className = "error";
-        return;
-      }
+      Array.from(fileInput.files).forEach((file, idx) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const container = document.createElement("div");
+          container.className = "template-container";
 
-      previewBtn.disabled = true;
-      generateBtn.disabled = true;
-      statusEl.textContent = "Generating preview...";
-      statusEl.className = "";
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          img.className = "template-image";
 
-      try {
-        const formData = new FormData(form);
-        const response = await fetch("/preview", {
-          method: "POST",
-          body: formData,
-        });
+          const label = document.createElement("div");
+          label.className = "drag-label";
+          label.textContent = "Sample Name";
+          label.dataset.index = String(idx);
 
-        if (!response.ok) {
-          const text = await response.text();
-          statusEl.textContent = text || "Failed to generate preview.";
-          statusEl.className = "error";
-          return;
-        }
+          container.appendChild(img);
+          container.appendChild(label);
+          previewsContainer.appendChild(container);
 
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        previewImg.src = url;
-        previewImg.style.display = "block";
+          // Set initial position
+          positions[idx] = { x: 0.5, y: 0.5 };
+          positionsInput.value = JSON.stringify(positions);
 
-        statusEl.textContent = "Preview generated successfully.";
-        statusEl.className = "success";
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent = "Error generating preview.";
-        statusEl.className = "error";
-      } finally {
-        previewBtn.disabled = false;
-        generateBtn.disabled = false;
-      }
+          makeDraggable(label, container, idx);
+        };
+        reader.readAsDataURL(file);
+      });
     });
+
+    function makeDraggable(label, container, idx) {
+      let dragging = false;
+
+      label.addEventListener("mousedown", (e) => {
+        dragging = true;
+        e.preventDefault();
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        const rect = container.getBoundingClientRect();
+
+        // Position label inside container (top-left origin)
+        let x = e.clientX - rect.left;
+        let y = e.clientY - rect.top;
+
+        // Clamp inside container bounds
+        x = Math.max(0, Math.min(x, rect.width));
+        y = Math.max(0, Math.min(y, rect.height));
+
+        label.style.left = x + "px";
+        label.style.top = y + "px";
+        label.style.transform = "translate(-50%, -50%)";
+
+        positions[idx] = { x: x / rect.width, y: y / rect.height };
+        positionsInput.value = JSON.stringify(positions);
+      });
+
+      document.addEventListener("mouseup", () => {
+        dragging = false;
+      });
+    }
   </script>
 </body>
 </html>

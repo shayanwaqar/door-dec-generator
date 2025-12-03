@@ -1,10 +1,11 @@
 import io
 import zipfile
+import json
 from datetime import datetime
 
 from flask import Flask, render_template, request, send_file, abort
 
-from utils.image_processing import generate_preview_image, generate_batch_images
+from utils.image_processing import generate_batch_images
 
 app = Flask(__name__)
 
@@ -22,36 +23,18 @@ def _parse_names(raw: str):
     return [n for n in names if n]
 
 
-@app.route("/preview", methods=["POST"])
-def preview():
-    files = request.files.getlist("images")
-    raw_names = request.form.get("names", "")
-    font_color = request.form.get("font_color", "#000000")
-    text_position = request.form.get("text_position", "center")
-
-    names = _parse_names(raw_names)
-    if not files or not names:
-        abort(400, "Need at least one image and one name for preview.")
-
-    # use first image + first name
-    first_file = files[0]
-    first_name = names[0]
-
-    img_bytes = generate_preview_image(first_file, first_name, font_color, text_position)
-
-    return send_file(
-        io.BytesIO(img_bytes),
-        mimetype="image/png",
-        download_name="preview.png",
-    )
-
-
 @app.route("/generate", methods=["POST"])
 def generate():
     files = request.files.getlist("images")
     raw_names = request.form.get("names", "")
     font_color = request.form.get("font_color", "#000000")
-    text_position = request.form.get("text_position", "center")
+    positions_json = request.form.get("positions", "")
+    positions = {}
+    if positions_json:
+        try:
+            positions = json.loads(positions_json)  # keys like "0", "1", ...
+        except json.JSONDecodeError:
+            positions = {}
 
     names = _parse_names(raw_names)
     if not files:
@@ -63,7 +46,7 @@ def generate():
     if len(names) > 300:
         abort(400, "Too many names. Please limit to 300 per batch.")
 
-    images_data = generate_batch_images(files, names, font_color, text_position)
+    images_data = generate_batch_images(files, names, font_color, positions=positions)
 
     # build ZIP in memory
     zip_buffer = io.BytesIO()
