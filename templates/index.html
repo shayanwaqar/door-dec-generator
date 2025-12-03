@@ -22,6 +22,7 @@
     .section {
       margin-bottom: 1.5rem;
       padding: 1rem;
+      border: 1px solid #ddd;
       border: 1px solid #4A5568;
       border-radius: 8px;
       background-color: #2D3748;
@@ -67,6 +68,8 @@
     button {
       padding: 0.5rem 1rem;
       border-radius: 6px;
+      border: 1px solid #333;
+      background: #111;
       border: 1px solid #2B6CB0;
       background: #2B6CB0;
       color: #fff;
@@ -79,10 +82,12 @@
     }
     .small-text {
       font-size: 0.85rem;
+      color: #555;
       color: #A0AEC0;
     }
     #name-count {
       font-size: 0.85rem;
+      color: #333;
       color: #CBD5E0;
       margin-bottom: 0.5rem;
     }
@@ -91,9 +96,11 @@
       font-size: 0.9rem;
     }
     .error {
+      color: #b00020;
       color: #f44336;
     }
     .success {
+      color: #0a7b3b;
       color: #4caf50;
     }
     .template-container {
@@ -103,9 +110,11 @@
       width: 260px;
       height: 195px; /* 4:3 aspect ratio */
       vertical-align: top;
+      border: 1px solid #eee;
       border: 1px solid #4A5568;
       border-radius: 4px;
       overflow: hidden;
+      background-color: #f8f9fa; /* Light background for padding effect */
       background-color: #1A202C; /* Match main background */
     }
     .template-image {
@@ -127,6 +136,12 @@
       font-size: 0.75rem;
       border-radius: 4px;
       white-space: nowrap;
+    }
+    #preview-image-container {
+      margin-top: 1rem;
+    }
+    #preview-image {
+      max-width: 400px;
     }
   </style>
 </head>
@@ -182,12 +197,25 @@ Isabella</textarea>
       <input type="color" id="font_color" name="font_color" value="#FFFFFF" />
     </div>
 
+    <div class="section" id="font-section">
+      <label for="font_name">4. Choose a font</label>
+      <select id="font_name" name="font_name">
+        {% for name, path in fonts.items() %}
+          <option value="{{ name }}">{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
     <div class="section">
-      <label>4. Generate your tags</label>
+      <label>5. Preview &amp; Generate</label>
       <div class="buttons">
+        <button type="button" id="previewBtn">Preview First Tag</button>
         <button type="submit" id="generateBtn">Generate ZIP</button>
       </div>
       <div id="status"></div>
+      <div id="preview-image-container" style="display: none;">
+        <img id="preview-image" alt="Preview of the first door tag" />
+      </div>
     </div>
   </form>
   <input type="hidden" id="positions" name="positions" form="mainForm">
@@ -195,8 +223,11 @@ Isabella</textarea>
   <script>
     const namesTextarea = document.getElementById("names");
     const nameCountEl = document.getElementById("name-count");
+    const previewBtn = document.getElementById("previewBtn");
     const generateBtn = document.getElementById("generateBtn");
     const statusEl = document.getElementById("status");
+    const previewImageContainer = document.getElementById("preview-image-container");
+    const previewImage = document.getElementById("preview-image");
     const fileInput = document.getElementById("images");
     const previewsContainer = document.getElementById("template-previews");
     const positionsInput = document.getElementById("positions");
@@ -210,6 +241,51 @@ Isabella</textarea>
 
     namesTextarea.addEventListener("input", updateNameCount);
     updateNameCount();
+
+    previewBtn.addEventListener("click", async () => {
+      statusEl.textContent = "";
+      statusEl.className = "";
+      previewImageContainer.style.display = "none";
+
+      const files = fileInput.files;
+      if (!files || files.length === 0) {
+        statusEl.textContent = "Please upload at least one image to preview.";
+        statusEl.className = "error";
+        return;
+      }
+
+      const hasName = namesTextarea.value.trim().length > 0;
+      if (!hasName) {
+        statusEl.textContent = "Please enter at least one name to preview.";
+        statusEl.className = "error";
+        return;
+      }
+
+      previewBtn.disabled = true;
+      generateBtn.disabled = true;
+      statusEl.textContent = "Generating preview...";
+
+      try {
+        const formData = new FormData(form);
+        const response = await fetch("/preview", { method: "POST", body: formData });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to generate preview.");
+        }
+
+        const blob = await response.blob();
+        previewImage.src = URL.createObjectURL(blob);
+        previewImageContainer.style.display = "block";
+        statusEl.textContent = "";
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.className = "error";
+      } finally {
+        previewBtn.disabled = false;
+        generateBtn.disabled = false;
+      }
+    });
 
     let positions = {}; // { "0": { x: 0.5, y: 0.3 }, ... }
 

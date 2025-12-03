@@ -8,21 +8,35 @@ from PIL import Image, ImageDraw, ImageFont
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONT_DIR = os.path.join(BASE_DIR, "static", "fonts")
 
-# Default font (fallback if specific font can't be loaded)
-# Replace with whatever font you prefer:
-DEFAULT_FONT_PATH = os.path.join(FONT_DIR, "PressStart2P-Regular.ttf")
-
 
 # ------------------------------
 # FONT LOADING
 # ------------------------------
 
-def _load_font(size: int):
-    """Try to load TTF font; fallback to Pillow default."""
+def get_available_fonts() -> dict:
+    """Scan the font directory and return a dictionary of font names to file paths."""
+    fonts = {}
+    if not os.path.isdir(FONT_DIR):
+        return fonts
+    for filename in os.listdir(FONT_DIR):
+        if filename.lower().endswith((".ttf", ".otf")):
+            font_path = os.path.join(FONT_DIR, filename)
+            # Clean up name for display: "PressStart2P-Regular.ttf" -> "PressStart2P Regular"
+            font_name = os.path.splitext(filename)[0].replace("-", " ")
+            fonts[font_name] = font_path
+    return fonts
+
+
+AVAILABLE_FONTS = get_available_fonts()
+DEFAULT_FONT_NAME = next(iter(AVAILABLE_FONTS), None)
+
+def _load_font(font_name: str, size: int):
+    """Load a TTF font by name; fallback to Pillow default."""
+    font_path = AVAILABLE_FONTS.get(font_name)
     try:
-        if os.path.exists(DEFAULT_FONT_PATH):
-            return ImageFont.truetype(DEFAULT_FONT_PATH, size=size)
-    except Exception:
+        if font_path and os.path.exists(font_path):
+            return ImageFont.truetype(font_path, size=size)
+    except IOError:
         pass
     return ImageFont.load_default()
 
@@ -48,6 +62,7 @@ def _draw_text_at_position(
     img: Image.Image,
     text: str,
     position_xy: Tuple[int, int],
+    font_name: str,
     font_color: str = "#FFFFFF",
     stroke_width: int = 3,
     stroke_fill: str = "#000000",
@@ -66,13 +81,13 @@ def _draw_text_at_position(
 
     # Start with largest font size
     size = MAX_FS
-    font = _load_font(size)
+    font = _load_font(font_name, size)
 
     # Fit name inside allowed width
     max_width_allowed = img.width * width_margin_ratio
 
     while size >= MIN_FS:
-        font = _load_font(size)
+        font = _load_font(font_name, size)
         bbox = draw.textbbox((0, 0), text, font=font, stroke_width=stroke_width)
         text_w = bbox[2] - bbox[0]
         if text_w <= max_width_allowed:
@@ -93,6 +108,37 @@ def _draw_text_at_position(
 
 
 # ------------------------------
+# PREVIEW IMAGE GENERATION
+# ------------------------------
+
+def generate_preview_image(
+    file_obj,
+    name: str,
+    font_color: str,
+    font_name: str,
+    position: dict,
+) -> bytes:
+    """Generate one preview PNG based on first template, first name, and selected options."""
+    img = Image.open(file_obj.stream)
+    img = _resize_image_if_needed(img)
+
+    # Calculate position from fractional coordinates
+    try:
+        fx = float(position.get("x", 0.5))
+        fy = float(position.get("y", 0.5))
+        cx = int(fx * img.width)
+        cy = int(fy * img.height)
+    except (ValueError, TypeError):
+        cx, cy = img.width // 2, img.height // 2
+
+    img = _draw_text_at_position(img, name, (cx, cy), font_name, font_color, stroke_width=3)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+# ------------------------------
 # BATCH IMAGE GENERATION
 # ------------------------------
 
@@ -100,6 +146,7 @@ def generate_batch_images(
     files,
     names: List[str],
     font_color: str,
+    font_name: str,
     positions: Union[dict, None] = None,
 ) -> List[Tuple[str, bytes]]:
     """
@@ -137,7 +184,7 @@ def generate_batch_images(
             except (ValueError, TypeError):
                 pass  # Keep default on parsing error
 
-        img = _draw_text_at_position(template, name, (cx, cy), font_color=font_color, stroke_width=3)
+        img = _draw_text_at_position(template, name, (cx, cy), font_name, font_color=font_color, stroke_width=3)
 
         # Safe filename
         safe = "".join(c for c in name if c.isalnum() or c in (" ", "_", "-")).strip()
