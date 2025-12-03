@@ -355,6 +355,15 @@ Isabella</textarea>
             const label = document.createElement("div");
             label.className = "drag-label";
             label.textContent = preview.name;
+
+            // --- Retain State ---
+            // Set the initial position of the label from our stored positions object.
+            const pos = positions[idx];
+            if (pos) {
+                label.style.left = `${pos.x * 100}%`;
+                label.style.top = `${pos.y * 100}%`;
+            }
+
             container.appendChild(label);
             makeDraggable(label, container, idx);
         }
