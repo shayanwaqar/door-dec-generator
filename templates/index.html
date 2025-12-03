@@ -414,6 +414,29 @@ Isabella</textarea>
                 };
                 presetsContainer.appendChild(link);
             }
+
+            const centerXLink = document.createElement("span");
+            centerXLink.className = "preset-link";
+            centerXLink.textContent = "Center X";
+            centerXLink.onclick = () => {
+                const newPos = { x: 0.5, y: positions[idx].y };
+                positions[idx] = newPos;
+                positionsInput.value = JSON.stringify(positions);
+                label.style.left = `${newPos.x * 100}%`;
+            };
+            presetsContainer.appendChild(centerXLink);
+
+            const centerYLink = document.createElement("span");
+            centerYLink.className = "preset-link";
+            centerYLink.textContent = "Center Y";
+            centerYLink.onclick = () => {
+                const newPos = { x: positions[idx].x, y: 0.5 };
+                positions[idx] = newPos;
+                positionsInput.value = JSON.stringify(positions);
+                label.style.top = `${newPos.y * 100}%`;
+            };
+            presetsContainer.appendChild(centerYLink);
+
             wrapper.appendChild(presetsContainer);
         }
 
