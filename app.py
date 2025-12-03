@@ -27,6 +27,7 @@ def preview():
     files = request.files.getlist("images")
     raw_names = request.form.get("names", "")
     font_color = request.form.get("font_color", "#000000")
+    text_position = request.form.get("text_position", "center")
 
     names = _parse_names(raw_names)
     if not files or not names:
@@ -36,7 +37,7 @@ def preview():
     first_file = files[0]
     first_name = names[0]
 
-    img_bytes = generate_preview_image(first_file, first_name, font_color)
+    img_bytes = generate_preview_image(first_file, first_name, font_color, text_position)
 
     return send_file(
         io.BytesIO(img_bytes),
@@ -50,6 +51,7 @@ def generate():
     files = request.files.getlist("images")
     raw_names = request.form.get("names", "")
     font_color = request.form.get("font_color", "#000000")
+    text_position = request.form.get("text_position", "center")
 
     names = _parse_names(raw_names)
     if not files:
@@ -61,7 +63,7 @@ def generate():
     if len(names) > 300:
         abort(400, "Too many names. Please limit to 300 per batch.")
 
-    images_data = generate_batch_images(files, names, font_color)
+    images_data = generate_batch_images(files, names, font_color, text_position)
 
     # build ZIP in memory
     zip_buffer = io.BytesIO()

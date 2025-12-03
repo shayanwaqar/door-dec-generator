@@ -124,15 +124,21 @@ Charlie"
     </div>
 
     <div class="section">
-      <label for="font_color">3. Text color</label>
+      <label for="font_color">3. Choose text color</label>
       <input type="color" id="font_color" name="font_color" value="#000000" />
-      <p class="small-text">
-        For V1, text is centered on the tag. Color is applied to all names.
-      </p>
     </div>
 
     <div class="section">
-      <label>4. Preview & generate</label>
+      <label for="text_position">4. Choose text position</label>
+      <select name="text_position" id="text_position">
+        <option value="top">Top</option>
+        <option value="center" selected>Center</option>
+        <option value="bottom">Bottom</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <label>5. Preview & generate</label>
       <div class="buttons">
         <button type="button" id="previewBtn">Preview</button>
         <button type="submit" id="generateBtn">Generate ZIP</button>

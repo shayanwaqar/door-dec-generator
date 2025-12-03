@@ -48,6 +48,7 @@ def _draw_centered_text(
     img: Image.Image,
     text: str,
     font_color: str = "#FFFFFF",
+    text_position: str = "center",
     stroke_width: int = 3,
     stroke_fill: str = "#000000",
     width_margin_ratio: float = 0.9,
@@ -78,16 +79,26 @@ def _draw_centered_text(
             break
         size -= 2
 
-    # Final center point
+    # Calculate Y coordinate based on text_position
     x = img.width // 2
-    y = img.height // 2
+    if text_position == "top":
+        # Position text with a 5% margin from the top
+        y = int(img.height * 0.05)
+        anchor = "ma"  # Middle-aligned horizontally, Ascender-aligned vertically
+    elif text_position == "bottom":
+        # Position text with a 5% margin from the bottom
+        y = int(img.height * 0.95)
+        anchor = "md"  # Middle-aligned horizontally, Descender-aligned vertically
+    else:  # "center"
+        y = img.height // 2
+        anchor = "mm"  # Middle-aligned horizontally and vertically
 
     draw.text(
         (x, y),
         text,
         font=font,
         fill=font_color,
-        anchor="mm",
+        anchor=anchor,
         stroke_width=stroke_width,
         stroke_fill=stroke_fill,
     )
@@ -99,14 +110,14 @@ def _draw_centered_text(
 # PREVIEW GENERATION
 # ------------------------------
 
-def generate_preview_image(file_obj, name: str, font_color: str) -> bytes:
+def generate_preview_image(file_obj, name: str, font_color: str, text_position: str) -> bytes:
     """Generate one preview PNG based on first template + first name."""
 
     img = Image.open(file_obj.stream)
     img = _resize_image_if_needed(img)
 
     # White text, black outline works best visually
-    img = _draw_centered_text(img, name, font_color=font_color, stroke_width=3)
+    img = _draw_centered_text(img, name, font_color, text_position, stroke_width=3)
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -121,6 +132,7 @@ def generate_batch_images(
     files,
     names: List[str],
     font_color: str,
+    text_position: str,
 ) -> List[Tuple[str, bytes]]:
     """
     Generate all name tags and return list of (filename, image_bytes).
@@ -138,7 +150,7 @@ def generate_batch_images(
 
     for idx, name in enumerate(names):
         template = templates[idx % tcount].copy()
-        img = _draw_centered_text(template, name, font_color=font_color, stroke_width=3)
+        img = _draw_centered_text(template, name, font_color, text_position, stroke_width=3)
 
         # Safe filename
         safe = "".join(c for c in name if c.isalnum() or c in (" ", "_", "-")).strip()
