@@ -210,8 +210,9 @@ Isabella</textarea>
     <div class="section">
       <label>5. Preview &amp; Generate</label>
       <div class="buttons">
-        <button type="button" id="previewBtn">Arrange &amp; Preview Tags</button>
-        <button type="submit" id="generateBtn">Generate ZIP</button>
+        <button type="button" id="arrangeBtn">Arrange Names</button>
+        <button type="button" id="previewBtn" disabled>Preview Final Tags</button>
+        <button type="submit" id="generateBtn" style="margin-left: auto;">Generate ZIP</button>
       </div>
       <div id="status"></div>
       <div id="preview-image-container" style="display: none;">
@@ -224,6 +225,7 @@ Isabella</textarea>
   <script>
     const namesTextarea = document.getElementById("names");
     const nameCountEl = document.getElementById("name-count");
+    const arrangeBtn = document.getElementById("arrangeBtn");
     const previewBtn = document.getElementById("previewBtn");
     const generateBtn = document.getElementById("generateBtn");
     const statusEl = document.getElementById("status");
@@ -242,11 +244,7 @@ Isabella</textarea>
     namesTextarea.addEventListener("input", updateNameCount);
     updateNameCount();
 
-    previewBtn.addEventListener("click", async () => {
-      statusEl.textContent = "";
-      statusEl.className = "";
-      previewImageContainer.style.display = "none";
-
+    arrangeBtn.addEventListener("click", () => {
       const files = fileInput.files;
       if (!files || files.length === 0) {
         statusEl.textContent = "Please upload at least one image to preview.";
@@ -261,7 +259,17 @@ Isabella</textarea>
         return;
       }
 
+      loadAndDisplayPreviews(true); // Enter Arrange Mode
+    });
+
+    previewBtn.addEventListener("click", () => {
+      loadAndDisplayPreviews(false); // Enter Preview Mode
+    });
+
+    async function loadAndDisplayPreviews(isArrangeMode) {
+      previewImageContainer.style.display = "none";
       previewBtn.disabled = true;
+      arrangeBtn.disabled = true;
       generateBtn.disabled = true;
       statusEl.textContent = "Generating preview...";
 
@@ -275,41 +283,64 @@ Isabella</textarea>
         }
 
         const data = await response.json();
-        positions = {}; // Reset positions for the new preview set
+
+        // Only reset positions if we are not already in an arrange session
+        if (Object.keys(positions).length === 0) {
+            data.previews.forEach((_, idx) => {
+                positions[idx] = { x: 0.5, y: 0.5 };
+            });
+        }
+
         previewGrid.innerHTML = ""; // Clear previous previews
 
         data.previews.forEach((preview, idx) => {
-          // Create a draggable preview for each image
-          const container = document.createElement("div");
-          container.className = "template-container";
-
-          const img = document.createElement("img");
-          img.className = "template-image";
-          img.src = preview.src;
-
-          const label = document.createElement("div");
-          label.className = "drag-label";
-          label.textContent = preview.name; // Use the actual name!
-
-          container.appendChild(img);
-          container.appendChild(label);
-          previewGrid.appendChild(container);
-
-          // Set initial position and make it draggable
-          positions[idx] = { x: 0.5, y: 0.5 };
-          makeDraggable(label, container, idx);
+            const { container } = createPreviewElement(preview, isArrangeMode ? idx : -1);
+            previewGrid.appendChild(container);
         });
 
         previewImageContainer.style.display = "block";
         statusEl.textContent = "";
+
+        // Update button states based on the new mode
+        if (isArrangeMode) {
+            arrangeBtn.disabled = true;
+            previewBtn.disabled = false;
+        } else {
+            arrangeBtn.disabled = false;
+            previewBtn.disabled = true;
+        }
+
+        // Always ensure the hidden input is up-to-date
+        positionsInput.value = JSON.stringify(positions);
       } catch (err) {
         statusEl.textContent = `Error: ${err.message}`;
         statusEl.className = "error";
       } finally {
-        previewBtn.disabled = false;
         generateBtn.disabled = false;
       }
-    });
+    }
+
+    function createPreviewElement(preview, idx = -1) {
+        const container = document.createElement("div");
+        container.className = "template-container";
+
+        const img = document.createElement("img");
+        img.className = "template-image";
+        img.src = preview.src;
+
+        container.appendChild(img);
+
+        // Only add draggable label if an index is provided (i.e., in arrange mode)
+        if (idx !== -1) {
+            const label = document.createElement("div");
+            label.className = "drag-label";
+            label.textContent = preview.name;
+            container.appendChild(label);
+            makeDraggable(label, container, idx);
+        }
+
+        return { container, img };
+    }
 
     function makeDraggable(label, container, idx) {
       let dragging = false;
