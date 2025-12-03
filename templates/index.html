@@ -140,10 +140,24 @@
     #preview-image-container {
       margin-top: 1rem;
     }
+    #mode-indicator {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
     #preview-grid {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
+    }
+    .template-container.arrange-mode {
+      border-color: #e67e22;
+    }
+    .template-container.preview-mode {
+      border-color: #27ae60;
     }
   </style>
 </head>
@@ -211,11 +225,12 @@ Isabella</textarea>
       <label>5. Preview &amp; Generate</label>
       <div class="buttons">
         <button type="button" id="arrangeBtn">Arrange Names</button>
-        <button type="button" id="previewBtn" disabled>Preview Final Tags</button>
+        <button type="button" id="previewBtn" disabled>Preview Tags</button>
         <button type="submit" id="generateBtn" style="margin-left: auto;">Generate ZIP</button>
       </div>
       <div id="status"></div>
       <div id="preview-image-container" style="display: none;">
+        <h3 id="mode-indicator"></h3>
         <div id="preview-grid"></div>
       </div>
     </div>
@@ -229,6 +244,7 @@ Isabella</textarea>
     const previewBtn = document.getElementById("previewBtn");
     const generateBtn = document.getElementById("generateBtn");
     const statusEl = document.getElementById("status");
+    const modeIndicator = document.getElementById("mode-indicator");
     const fileInput = document.getElementById("images");
     const previewImageContainer = document.getElementById("preview-image-container");
     const previewGrid = document.getElementById("preview-grid");
@@ -294,7 +310,7 @@ Isabella</textarea>
         previewGrid.innerHTML = ""; // Clear previous previews
 
         data.previews.forEach((preview, idx) => {
-            const { container } = createPreviewElement(preview, isArrangeMode ? idx : -1);
+            const { container } = createPreviewElement(preview, isArrangeMode);
             previewGrid.appendChild(container);
         });
 
@@ -303,9 +319,11 @@ Isabella</textarea>
 
         // Update button states based on the new mode
         if (isArrangeMode) {
+            modeIndicator.textContent = "Arrange Mode";
             arrangeBtn.disabled = true;
             previewBtn.disabled = false;
         } else {
+            modeIndicator.textContent = "Preview Mode";
             arrangeBtn.disabled = false;
             previewBtn.disabled = true;
         }
@@ -320,9 +338,10 @@ Isabella</textarea>
       }
     }
 
-    function createPreviewElement(preview, idx = -1) {
+    function createPreviewElement(preview, inArrangeMode) {
         const container = document.createElement("div");
         container.className = "template-container";
+        container.classList.add(inArrangeMode ? "arrange-mode" : "preview-mode");
 
         const img = document.createElement("img");
         img.className = "template-image";
@@ -330,8 +349,9 @@ Isabella</textarea>
 
         container.appendChild(img);
 
-        // Only add draggable label if an index is provided (i.e., in arrange mode)
-        if (idx !== -1) {
+        // Only add draggable label if in arrange mode
+        if (inArrangeMode) {
+            const idx = previewGrid.children.length; // Get the index for the new element
             const label = document.createElement("div");
             label.className = "drag-label";
             label.textContent = preview.name;
