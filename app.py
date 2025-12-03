@@ -2,8 +2,9 @@ import io
 import zipfile
 import json
 from datetime import datetime
+import base64
 
-from flask import Flask, render_template, request, send_file, abort
+from flask import Flask, render_template, request, send_file, abort, jsonify
 
 from utils.image_processing import generate_batch_images, generate_preview_image, AVAILABLE_FONTS, DEFAULT_FONT_NAME
 
@@ -44,10 +45,21 @@ def preview():
     except json.JSONDecodeError:
         position = {"x": 0.5, "y": 0.5}
 
-    img_bytes = generate_preview_image(files[0], names[0], font_color, font_name, position)
+    preview_data_urls = []
+    for idx, file_obj in enumerate(files):
+        try:
+            # Get position for the current template, default to center
+            pos = json.loads(positions_json).get(str(idx), {"x": 0.5, "y": 0.5})
+        except (json.JSONDecodeError, KeyError):
+            pos = {"x": 0.5, "y": 0.5}
 
-    return send_file(io.BytesIO(img_bytes), mimetype="image/png")
+        img_bytes = generate_preview_image(file_obj, names[0], font_color, font_name, pos)
+        
+        # Encode as base64 data URL to send via JSON
+        base64_img = base64.b64encode(img_bytes).decode('utf-8')
+        preview_data_urls.append(f"data:image/png;base64,{base64_img}")
 
+    return jsonify({"previews": preview_data_urls})
 
 @app.route("/generate", methods=["POST"])
 def generate():

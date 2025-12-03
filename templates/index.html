@@ -140,8 +140,10 @@
     #preview-image-container {
       margin-top: 1rem;
     }
-    #preview-image {
-      max-width: 400px;
+    #preview-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
     }
   </style>
 </head>
@@ -214,7 +216,7 @@ Isabella</textarea>
       </div>
       <div id="status"></div>
       <div id="preview-image-container" style="display: none;">
-        <img id="preview-image" alt="Preview of the first door tag" />
+        <div id="preview-grid"></div>
       </div>
     </div>
   </form>
@@ -227,7 +229,7 @@ Isabella</textarea>
     const generateBtn = document.getElementById("generateBtn");
     const statusEl = document.getElementById("status");
     const previewImageContainer = document.getElementById("preview-image-container");
-    const previewImage = document.getElementById("preview-image");
+    const previewGrid = document.getElementById("preview-grid");
     const fileInput = document.getElementById("images");
     const previewsContainer = document.getElementById("template-previews");
     const positionsInput = document.getElementById("positions");
@@ -274,8 +276,19 @@ Isabella</textarea>
           throw new Error(errorText || "Failed to generate preview.");
         }
 
-        const blob = await response.blob();
-        previewImage.src = URL.createObjectURL(blob);
+        const data = await response.json();
+        previewGrid.innerHTML = ""; // Clear previous previews
+        data.previews.forEach(src => {
+          // Create a container and image styled just like the draggable previews
+          const container = document.createElement("div");
+          container.className = "template-container";
+          const img = document.createElement("img");
+          img.className = "template-image";
+          img.src = src;
+          container.appendChild(img);
+          previewGrid.appendChild(container);
+        });
+
         previewImageContainer.style.display = "block";
         statusEl.textContent = "";
       } catch (err) {
