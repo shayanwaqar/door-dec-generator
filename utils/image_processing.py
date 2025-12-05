@@ -1,5 +1,6 @@
 import io
 import os
+import re
 from typing import List, Tuple, Union
 
 from PIL import Image, ImageDraw, ImageFont
@@ -23,8 +24,20 @@ def get_available_fonts() -> dict:
     for filename in os.listdir(FONT_DIR):
         if filename.lower().endswith((".ttf", ".otf")):
             font_path = os.path.join(FONT_DIR, filename)
-            # Clean up name for display: "sports_world.ttf" -> "Sports World"
-            font_name = os.path.splitext(filename)[0].replace("-", " ").replace("_", " ").title()
+            
+            # --- Advanced Font Name Cleaning ---
+            # 1. Get the base name without extension
+            name = os.path.splitext(filename)[0]
+            
+            # 2. Split on common metadata keywords like "Variable" or "Italic"
+            # e.g., "OpenSans-VariableFont_wdth,wght" -> "OpenSans"
+            name = re.split(r'[_-]?(Variable|Italic|Static|VF|Flex)', name, maxsplit=1, flags=re.IGNORECASE)[0]
+
+            # 3. Insert spaces before uppercase letters in camelCase, e.g., "OpenSans" -> "Open Sans"
+            name = re.sub(r'(?<!^)(?=[A-Z])', ' ', name)
+
+            # 4. Replace separators and title-case the result
+            font_name = name.replace("-", " ").replace("_", " ").strip().title()
             fonts[font_name] = font_path
     return fonts
 
