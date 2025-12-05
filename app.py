@@ -13,6 +13,7 @@ app = Flask(__name__)
 
 @app.route("/", methods=["GET"])
 def index():
+    # Pass the dynamically found fonts to the frontend template
     return render_template("index.html", fonts=AVAILABLE_FONTS)
 
 
@@ -63,30 +64,29 @@ def preview():
 @app.route("/generate", methods=["POST"])
 def generate():
     files = request.files.getlist("images")
+    if not files:
+        abort(400, "Please upload at least one image.")
+
     raw_names = request.form.get("names", "")
+    names = _parse_names(raw_names)
+    if not names:
+        abort(400, "Please provide at least one name.")
+
     font_color = request.form.get("font_color", "#FFFFFF")
     font_name = request.form.get("font_name", DEFAULT_FONT_NAME)
     positions_json = request.form.get("positions", "")
     positions = {}
     if positions_json:
         try:
-            positions = json.loads(positions_json)  # keys like "0", "1", ...
+            positions = json.loads(positions_json)
         except json.JSONDecodeError:
             positions = {}
 
-    names = _parse_names(raw_names)
-    if not files:
-        abort(400, "Please upload at least one image.")
-    if not names:
-        abort(400, "Please provide at least one name.")
-
-    # limit for sanity (simple guardrail)
     if len(names) > 300:
         abort(400, "Too many names. Please limit to 300 per batch.")
 
     images_data = generate_batch_images(files, names, font_color, font_name, positions=positions)
 
-    # build ZIP in memory
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for filename, img_bytes in images_data:

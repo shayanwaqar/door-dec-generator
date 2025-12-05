@@ -14,7 +14,9 @@ FONT_DIR = os.path.join(BASE_DIR, "static", "fonts")
 # ------------------------------
 
 def get_available_fonts() -> dict:
-    """Scan the font directory and return a dictionary of font names to file paths."""
+    """
+    Scan the font directory and return a dictionary of font names to file paths.
+    """
     fonts = {}
     if not os.path.isdir(FONT_DIR):
         return fonts
