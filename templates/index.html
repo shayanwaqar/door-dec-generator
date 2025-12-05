@@ -61,7 +61,7 @@ Isabella</textarea>
       <label for="font_name">4. Choose a font</label>
       <select id="font_name" name="font_name">
         {% for name, path in fonts.items() %}
-          <option value="{{ name }}">{{ name }}</option>
+          <option value="{{ name }}" {% if name == default_font %}selected{% endif %}>{{ name }}</option>
         {% endfor %}
       </select>
     </div>

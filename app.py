@@ -13,8 +13,8 @@ app = Flask(__name__)
 
 @app.route("/", methods=["GET"])
 def index():
-    # Pass the dynamically found fonts to the frontend template
-    return render_template("index.html", fonts=AVAILABLE_FONTS)
+    # Pass the dynamically found fonts and the default font to the frontend template
+    return render_template("index.html", fonts=AVAILABLE_FONTS, default_font=DEFAULT_FONT_NAME)
 
 
 def _parse_names(raw: str):

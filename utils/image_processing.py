@@ -23,14 +23,19 @@ def get_available_fonts() -> dict:
     for filename in os.listdir(FONT_DIR):
         if filename.lower().endswith((".ttf", ".otf")):
             font_path = os.path.join(FONT_DIR, filename)
-            # Clean up name for display: "PressStart2P-Regular.ttf" -> "PressStart2P Regular"
-            font_name = os.path.splitext(filename)[0].replace("-", " ")
+            # Clean up name for display: "sports_world.ttf" -> "Sports World"
+            font_name = os.path.splitext(filename)[0].replace("-", " ").replace("_", " ").title()
             fonts[font_name] = font_path
     return fonts
 
 
 AVAILABLE_FONTS = get_available_fonts()
 DEFAULT_FONT_NAME = next(iter(AVAILABLE_FONTS), None)
+
+# Define the desired default font and set it if available, otherwise fall back to the first font found.
+DESIRED_DEFAULT_FONT = "Sports World"
+DEFAULT_FONT_NAME = DESIRED_DEFAULT_FONT if DESIRED_DEFAULT_FONT in AVAILABLE_FONTS else next(iter(AVAILABLE_FONTS), None)
+
 
 def _load_font(font_name: str, size: int):
     """Load a TTF font by name; fallback to Pillow default."""
