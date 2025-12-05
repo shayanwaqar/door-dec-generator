@@ -81,12 +81,12 @@ async function loadAndDisplayPreviews(isArrangeMode) {
     // Update button states based on the new mode
     if (isArrangeMode) {
         modeIndicator.textContent = "Arrange Mode";
-        modeInstructions.textContent = "Drag each name to your desired position on the template.";
+        modeInstructions.textContent = "Drag each name to your desired position. When you're done, click 'Preview Tags' to see the final look.";
         arrangeBtn.disabled = true;
         previewBtn.disabled = false;
     } else {
         modeIndicator.textContent = "Preview Mode";
-        modeInstructions.textContent = "This is how your generated tags will appear. Click 'Arrange Names' to go back and reposition.";
+        modeInstructions.textContent = "This is how your tags will look. Click 'Arrange Names' to reposition, or click 'Generate ZIP' to download.";
         arrangeBtn.disabled = false;
         previewBtn.disabled = true;
     }
